@@ -1,41 +1,69 @@
-require('plugins.telescope')
-require('plugins.treesitter')
-require('plugins.lspconfig')
+local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
+  local out = vim.fn.system({ 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { 'Failed to clone lazy.nvim:\n', 'ErrorMsg' },
+      { out,                            'WarningMsg' },
+      { '\nPress any key to exit...' },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
+end
+vim.opt.rtp:prepend(lazypath)
 
-return require('packer').startup(function(use)
-  use 'wbthomason/packer.nvim'
-
-  use {
-    'nvim-telescope/telescope.nvim', tag = '0.1.8',
-    requires = { 'nvim-lua/plenary.nvim' }
-  }
-
-  use {
-    'nvim-treesitter/nvim-treesitter',
-    run = function()
-      local ts_update = require('nvim-treesitter.install').update({ with_sync = true })
-      ts_update()
-    end
-  }
-
-  use {
-    'williamboman/mason.nvim',
-    'williamboman/mason-lspconfig.nvim',
-    'neovim/nvim-lspconfig',
-    'hrsh7th/cmp-nvim-lsp',
-    'hrsh7th/cmp-buffer',
-    'hrsh7th/cmp-path',
-    'hrsh7th/nvim-cmp',
-    'L3MON4D3/LuaSnip',
-    'saadparwaiz1/cmp_luasnip'
-  }
-
-  use {
-    'adisen99/codeschool.nvim',
-    requires = { 'rktjmp/lush.nvim' },
+require('lazy').setup({
+  {
+    'nvim-telescope/telescope.nvim',
+    tag = '0.1.8',
+    dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
-      vim.g.codeschool_contrast_dark = 'hard'
-      vim.cmd('colorscheme codeschool')
+      require('plugins.telescope')
+    end
+  },
+  {
+    'nvim-treesitter/nvim-treesitter',
+    opts = {
+      auto_install = true,
+      highlight = { enable = true }
+    },
+    build = function()
+      require('nvim-treesitter.install')
+          .update({ with_sync = true })()
+    end
+  },
+  {
+    'neovim/nvim-lspconfig',
+    dependencies = {
+      'hrsh7th/cmp-nvim-lsp',
+      'williamboman/mason.nvim',
+      'williamboman/mason-lspconfig.nvim'
+    },
+    config = function()
+      require('plugins.lspconfig')
+    end
+  },
+  {
+    'hrsh7th/nvim-cmp',
+    dependencies = {
+      'hrsh7th/cmp-buffer',
+      'hrsh7th/cmp-path',
+      'L3MON4D3/LuaSnip',
+      'saadparwaiz1/cmp_luasnip'
+    },
+    config = function()
+      require('plugins.cmp')
+    end
+  },
+  {
+    'folke/tokyonight.nvim',
+    lazy = false,
+    priority = 1000,
+    opts = {},
+    config = function()
+      vim.cmd('colorscheme tokyonight')
     end
   }
-end)
+})
